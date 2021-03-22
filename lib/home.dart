@@ -1,21 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class Home extends StatelessWidget {
+enum HomeViewState {
+  Busy,
+  DataRetrieved,
+  NoData,
+}
+
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  final StreamController<HomeViewState> stateController =
+      StreamController<HomeViewState>();
+
+  List<String> listItems;
+
+  @override
+  void initState() {
+    _getListData();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[900],
-      body: FutureBuilder(
-        future: _getListData(),
+      body: StreamBuilder(
+        stream: stateController.stream,
         builder: (buildContext, snapshot) {
           if (snapshot.hasError) return _getInformationMessage(snapshot.error);
 
-          if (!snapshot.hasData)
+          if (!snapshot.hasData || snapshot.data == HomeViewState.Busy)
             return Center(child: CircularProgressIndicator());
 
-          List<String> listItems = snapshot.data;
-
-          if (listItems.isEmpty)
+          if (snapshot.data == HomeViewState.NoData)
             return _getInformationMessage(
                 'No data found for your account. Add something and check back.');
 
@@ -26,22 +48,27 @@ class Home extends StatelessWidget {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _getListData(),
+      ),
     );
   }
 
-  Future<List<String>> _getListData({
+  Future _getListData({
     bool hasError = false,
     bool hasData = true,
   }) async {
+    stateController.add(HomeViewState.Busy);
     await Future.delayed(Duration(seconds: 2));
 
     if (hasError)
-      return Future.error(
+      return stateController.addError(
           'An error occurred while fetching the data. Please try again later.');
 
-    if (!hasData) return [];
+    if (!hasData) return stateController.add(HomeViewState.NoData);
 
-    return List<String>.generate(10, (index) => '$index title');
+    listItems = List<String>.generate(10, (index) => '$index title');
+    stateController.add(HomeViewState.DataRetrieved);
   }
 
   Widget _getListItemUi(int index, List<String> listItems) {
