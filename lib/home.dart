@@ -1,40 +1,31 @@
 import 'package:flutter/material.dart';
 
-class Home extends StatefulWidget {
-  @override
-  _HomeState createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  List<String> _pageData;
-
-  bool get _fetchingData => _pageData == null;
-
-  @override
-  void initState() {
-    _getListData(hasData: false)
-        .then((data) => setState(() {
-              if (data.isEmpty)
-                data.add(
-                    'No data found for your account. Add something and check back.');
-              _pageData = data;
-            }))
-        .catchError((error) => setState(() {
-              _pageData = [error];
-            }));
-    super.initState();
-  }
-
+class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[900],
-      body: _fetchingData
-          ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _pageData.length,
-              itemBuilder: (buildContext, index) => _getListItemUi(index),
-            ),
+      body: FutureBuilder(
+        future: _getListData(),
+        builder: (buildContext, snapshot) {
+          if (snapshot.hasError) return _getInformationMessage(snapshot.error);
+
+          if (!snapshot.hasData)
+            return Center(child: CircularProgressIndicator());
+
+          List<String> listItems = snapshot.data;
+
+          if (listItems.isEmpty)
+            return _getInformationMessage(
+                'No data found for your account. Add something and check back.');
+
+          return ListView.builder(
+            itemCount: listItems.length,
+            itemBuilder: (buildContext, index) =>
+                _getListItemUi(index, listItems),
+          );
+        },
+      ),
     );
   }
 
@@ -53,7 +44,7 @@ class _HomeState extends State<Home> {
     return List<String>.generate(10, (index) => '$index title');
   }
 
-  Widget _getListItemUi(int index) {
+  Widget _getListItemUi(int index, List<String> listItems) {
     return Container(
       margin: EdgeInsets.all(5),
       height: 50,
@@ -63,8 +54,21 @@ class _HomeState extends State<Home> {
       ),
       child: Center(
         child: Text(
-          _pageData[index],
+          listItems[index],
           style: TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _getInformationMessage(String message) {
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: Colors.grey[500],
         ),
       ),
     );
