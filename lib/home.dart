@@ -1,12 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-enum HomeViewState {
-  Busy,
-  DataRetrieved,
-  NoData,
-}
+import 'home_event.dart';
+import 'home_model.dart';
+import 'home_state.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -14,14 +10,11 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  final StreamController<HomeViewState> stateController =
-      StreamController<HomeViewState>();
-
-  List<String> listItems;
+  final model = HomeModel();
 
   @override
   void initState() {
-    _getListData();
+    model.dispatch(FetchData());
     super.initState();
   }
 
@@ -30,45 +23,30 @@ class _HomeState extends State<Home> {
     return Scaffold(
       backgroundColor: Colors.grey[900],
       body: StreamBuilder(
-        stream: stateController.stream,
+        stream: model.homeState,
         builder: (buildContext, snapshot) {
           if (snapshot.hasError) return _getInformationMessage(snapshot.error);
 
-          if (!snapshot.hasData || snapshot.data == HomeViewState.Busy)
+          var homeState = snapshot.data;
+
+          if (!snapshot.hasData || homeState is BusyHomeState)
             return Center(child: CircularProgressIndicator());
 
-          if (snapshot.data == HomeViewState.NoData)
+          if (homeState is DataFetchedHomeState) if (!homeState.hasData)
             return _getInformationMessage(
                 'No data found for your account. Add something and check back.');
 
           return ListView.builder(
-            itemCount: listItems.length,
+            itemCount: homeState.data.length,
             itemBuilder: (buildContext, index) =>
-                _getListItemUi(index, listItems),
+                _getListItemUi(index, homeState.data),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _getListData(),
+        onPressed: () => model.dispatch(FetchData(hasData: false)),
       ),
     );
-  }
-
-  Future _getListData({
-    bool hasError = false,
-    bool hasData = true,
-  }) async {
-    stateController.add(HomeViewState.Busy);
-    await Future.delayed(Duration(seconds: 2));
-
-    if (hasError)
-      return stateController.addError(
-          'An error occurred while fetching the data. Please try again later.');
-
-    if (!hasData) return stateController.add(HomeViewState.NoData);
-
-    listItems = List<String>.generate(10, (index) => '$index title');
-    stateController.add(HomeViewState.DataRetrieved);
   }
 
   Widget _getListItemUi(int index, List<String> listItems) {
