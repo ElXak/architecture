@@ -44,7 +44,7 @@ class _HomeState extends State<Home> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => model.dispatch(FetchData(hasData: false)),
+        onPressed: () => model.dispatch(FetchData(hasError: true)),
       ),
     );
   }

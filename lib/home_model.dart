@@ -3,12 +3,6 @@ import 'dart:async';
 import 'home_event.dart';
 import 'home_state.dart';
 
-enum HomeViewState {
-  Busy,
-  DataRetrieved,
-  NoData,
-}
-
 class HomeModel {
   final StreamController<HomeState> _stateController =
       StreamController<HomeState>();
