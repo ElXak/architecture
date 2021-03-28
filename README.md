@@ -1,6 +1,9 @@
 # architecture
 
 Go from SetState to Architecture
+1.FutureBuilder
+2.SreamBuilder
+3.StreamBuilderLikeBloc
 
 ## Getting Started
 
